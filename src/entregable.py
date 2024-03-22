@@ -111,37 +111,57 @@ class Universidad:
     
     def _buscaasig(self,nombre): # se hace un método para encontrar por el nombre de la asignatura el objeto.
         asig = None
-        for i in self._listaasig:
-            if i.nombre == nombre:
-                asig = i # poner un break?
+        i = 0
+        fin = False
+        while i < len(self._lista_asig) and not fin:
+            if self._lista_asig[i].nombre == nombre:
+                asig = self._lista_asig[i]
+                fin = True
+            i += 1
         return asig
 
     def _buscaprofAsoc(self,profesor): # buscamos por nombre o por DNI??
         prof = None
-        for i in self._lista_prof_asoc:
-            if i.nombre == profesor:
-                prof = i
+        i = 0
+        fin = False
+        while i < len(self._lista_prof_asoc) and not fin:
+            if self._lista_prof_asoc[i].nombre == profesor:
+                prof = self._lista_prof_asoc[i]
+                fin = True
+            i += 1
         return prof
         
     def _buscaprofTitular(self,profesor):
         prof = None
-        for i in self._lista_prof_tit:
-            if i.nombre == profesor:
-                prof = i
+        i = 0
+        fin = False
+        while i < len(self._lista_prof_tit) and not fin:
+            if self._lista_prof_tit[i].nombre == profesor:
+                prof = self._lista_prof_tit[i]
+                fin = True
+            i += 1
         return prof
     
     def _buscaestud(self,estudiante):
         est = None
-        for i in self._lista_est:
-            if i.nombre == estudiante: # habrá que ver si se mira por nombre o por DNI.
-                est = i
+        i = 0
+        fin = False
+        while i < len(self._lista_est) and not fin:
+            if self._lista_est[i].nombre == estudiante:
+                est = self._lista_est[i]
+                fin = True
+            i += 1
         return est
     
     def _buscainvest(self,investigador):
         invest = None
-        for i in self._lista_inves:
-            if i.nombre == investigador:
-                invest = i
+        i = 0
+        fin = False
+        while i < len(self._lista_inves) and not fin:
+            if self._lista_inves[i].nombre == investigador:
+                invest = self._lista_inves[i]
+                fin = True
+            i += 1
         return invest
     
     def add_estudiante(self,nombre,DNI,direccion,sexo):
@@ -207,17 +227,19 @@ class Universidad:
         est.add_asig(asig)
         asig.add_estudiante(est)
 
-    def asignar_asig_prof_asoc(self,profesor,nom_asig): # nombre del profesor asig y nombre de la asignatura.
+    def asignar_asig_prof(self,profesor,nom_asig): # nombre del profesor asig y nombre de la asignatura.
         asig = self._buscaasig(nom_asig) # se ha encontrado a la asignatura.
-        prof = self._buscaprofAsoc(profesor)
-        prof.add_asig(asig) # ya se mete en la lista de asignaturas personal de los profesores.
-        asig.add_profesor(prof) # tipo de datos coinciden????
-    
-    def asignar_asig_prof_titular(self,profesor,nom_asig): # nombre del profesor asig y nombre de la asignatura.
-        asig = self._buscaasig(nom_asig) # se ha encontrado a la asignatura.
-        prof = self._buscaprofTitular(profesor)
-        prof.add_asig(asig)
-        asig.add_profesor(prof)  ## ver si el tipo de datos coincide.
+        prof_asoc = self._buscaprofAsoc(profesor)
+        if prof_asoc == None:
+            prof_tit = self._buscaprofTitular(profesor)
+            if prof_tit == None:
+                raise PersonaNotFound()
+            else: # profesor titular
+                prof_tit.add_asig(asig)
+                asig.add_profesor(prof_tit)
+        else:
+            prof_asoc.add_asig(asig)
+            asig.add_profesot(prof_asoc)
         
     def mostrar_lista_asig_est(self,estudiante): 
         est = self._buscaestud(estudiante)
