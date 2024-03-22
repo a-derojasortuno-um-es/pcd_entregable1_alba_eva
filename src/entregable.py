@@ -15,28 +15,35 @@ class miembro_departamento:
         self.departamento = departamento
     
 class Asignatura: 
-    def __init__(self,nombre,creditos,asignaturas=[]): # asignaturas preestablecidas?? o se van añadiendo poco a poco?
+    def __init__(self,nombre,creditos,roles={'profesor':[],'estudiantes':[]}): 
         self.nombre = nombre
         self.creditos = creditos
-        self.roles = {'profesor':[],'estudiantes':[]} # {'profesor':['A','B'],'estudiantes':['L','K','S','N']}
+        self.roles = roles 
     
-    def add_estudiante(self,estudiante): # estudiante = nombre del estudiante
+    def add_estudiante(self,estudiante): # se añade el objeto estudiante
         self.roles['estudiantes'].append(estudiante) # añadir el objeto o el nombre????
     
     def add_profesor(self,profesor): # una asignatura la pueden dar varios profesores.
         self.roles['profesor'].append(profesor)
     
-    def lista_estudiantes(self):
-        print("Para la asignatura ",self.nombre," se tienen los siguientes estudiantes: ")
-        for i in self.roles['estudiantes']:
-            print(i) # pase lo que pase, si tiene un objeto o el nombre se imprimirá i.
-
     def del_estudiante(self,estudiante):
         self.roles['estudiantes'].remove(estudiante)
 
     def del_profesor(self,profesor):
         self.roles['profesor'].remove(profesor)
+
+    def lista_estudiantes(self):
+        print("Para la asignatura ",self.nombre," se tienen los siguientes estudiantes: ")
+        for i in self.roles['estudiantes']:
+            print(i) # pase lo que pase, si tiene un objeto o el nombre se imprimirá i.
     
+    def __str__(self):
+        result = ""
+        result = result + "Asignatura:" + self.nombre + "con" + str(self.creditos) + "créditos," + len(self.roles["estudiantes"])  + "estudiantes y que la imparten los siguientes profesores: "
+        for i in self.roles["profesor"]:
+            result += "\n" + "Profesor:" + i.nombre # ver si se pone todos los datos del profesor o solo el nombre.
+        return result
+
 class Investigador(Persona):
     def __init__(self,nombre,DNI,direccion,sexo,area,departamento):
         super().__init__(self,nombre,DNI,direccion,sexo)
@@ -46,7 +53,7 @@ class Investigador(Persona):
 class ProfesorTitular(Persona):
     def __init__(self,nombre,DNI,direccion,sexo,area_inv,departamento,listaAsig=[]):
         super().__init__(self,nombre,DNI,direccion,sexo)
-        self.listaAsig = listaAsig # contendrá los objetos de las asignaturas -- asignaturas diferentes. **
+        self.listaAsig = listaAsig # contendrá los objetos de las asignaturas -- asignaturas diferentes. ** EXCEPCIÓN.
         self.rol_inv = Investigador(nombre,DNI,direccion,sexo,area_inv,departamento) # repetición de información.
         self.miembro = miembro_departamento(departamento)
 
@@ -56,9 +63,7 @@ class ProfesorTitular(Persona):
     def mostrar_asig(self):
         print(f"El profesor titular {self.nombre} imparte las siguientes asignaturas: ")
         for i in self.listaAsig: # sup que son objetos
-           print(i.nombre)
-        # ---Alternativa--- que no haya ninguna listAsig en prof_titular y que se haga en Universidad y se busca en la lista global
-        # de asignaturas y se vaya comprobando que el profesor está en i[i.nombre]['profesor'].
+           print(i,"\n") # se imprime el objeto Asignatura.
         
             
 class ProfesorAsociado(Persona):
@@ -73,7 +78,7 @@ class ProfesorAsociado(Persona):
     def mostrar_asig(self):
         print(f"El profesor asociado {self.nombre} imparte las siguientes asignaturas: ")
         for i in self.listaAsig: # sup que son objetos
-            print(i.nombre)
+            print(i,"\n")
 
 
 class Estudiante(Persona):
@@ -83,9 +88,11 @@ class Estudiante(Persona):
     
     def add_asig(self,asig):
         self.listaAsig.append(asig) 
-
-# tiene sentido que en la clase Universidad haya una lista de todas las asignaturas??? ---
-# PROBLEMA. CÓMO ENLAZAR ASIGNATURAS CON PROFESORES.
+    
+    def mostrar_asig(self):
+        print("El estudiante ",self.nombre," tiene la siguientes asignaturas: ")
+        for i in self.listaAsig:
+            print(i,"\n")
 
 class Universidad:
     def __init__(self,nombre,codpostal,ciudad,lista_inves=[],lista_prof_tit=[],lista_prof_asoc=[],lista_est=[],lista_asig=[]):
@@ -103,33 +110,35 @@ class Universidad:
     # vale la pena?    
     
     def _buscaasig(self,nombre): # se hace un método para encontrar por el nombre de la asignatura el objeto.
+        asig = None
         for i in self._listaasig:
             if i.nombre == nombre:
                 asig = i # poner un break?
         return asig
 
     def _buscaprofAsoc(self,profesor): # buscamos por nombre o por DNI??
-        try:
-            for i in self._lista_prof_asoc:
-                if i.nombre == profesor:
-                    prof = i
-            return prof
-        except:
-            raise PersonaNotFound() # añadir mensaje de error cuando la persona que se busca no se encuentra.
+        prof = None
+        for i in self._lista_prof_asoc:
+            if i.nombre == profesor:
+                prof = i
+        return prof
         
     def _buscaprofTitular(self,profesor):
+        prof = None
         for i in self._lista_prof_tit:
             if i.nombre == profesor:
                 prof = i
         return prof
     
     def _buscaestud(self,estudiante):
+        est = None
         for i in self._lista_est:
             if i.nombre == estudiante: # habrá que ver si se mira por nombre o por DNI.
                 est = i
         return est
     
     def _buscainvest(self,investigador):
+        invest = None
         for i in self._lista_inves:
             if i.nombre == investigador:
                 invest = i
@@ -157,29 +166,40 @@ class Universidad:
         self._lista_asig.append(asig)
 
     def del_estudiante(self,estudiante):
-        est = self._buscaestud(estudiante)
-        self._lista_est.remove(est) # se elimina de la lista de estudiantes.
-        for i in est.listaAsig: # en la lista de asignaturas de estudiante estará almacenado los objetos asignaturas.
-            i.del_estudiante(est) # habrá que eliminar de las asig que tenga el estudiante a este mismo.
+        try:
+            est = self._buscaestud(estudiante)
+            self._lista_est.remove(est) # se elimina de la lista de estudiantes.
+            for i in est.listaAsig: # en la lista de asignaturas de estudiante estará almacenado los objetos asignaturas.
+                i.del_estudiante(est) # habrá que eliminar de las asig que tenga el estudiante a este mismo.
+        except:
+            raise PersonaNotFound()
     
-    def del_prof_titular(self,profesor): # si eliminamos al profesor ri
-        prof = self._buscaprofTitular(profesor)
-        self._lista_prof_tit.remove(prof)
-        self._lista_inves.remove(prof) # al ser una composición también se elimina.
-        for i in prof.listaAsig:
-            i.del_profesot(prof)
-
-    def del_prof_asociado(self,profesor): # si eliminamos al profesor ri
-        prof = self._buscaprofAsoc(profesor)
-        self._lista_prof_asoc.remove(prof)
-        for i in prof.listaAsig:
-            i.del_profesot(prof)
-    
+    def del_profesor(self,profesor):
+        prof_asoc = self._buscaprofAsoc(profesor)
+        if prof_asoc == None:
+            prof_titular = self._buscaprofTitular(profesor)
+            if prof_titular == None:
+                raise PersonaNotFound() # ese nombre no corresponde a ningún profesor.
+            else: # signfica que profesor es un profesor titular.
+                prof = self._buscaprofTitular(profesor)
+                self._lista_prof_tit.remove(prof)
+                self._lista_inves.remove(prof) # al ser una composición también se elimina.
+                for i in prof.listaAsig:
+                    i.del_profesor(prof)
+        else: # es un profesor asociado
+            prof = self._buscaprofAsoc(profesor)
+            self._lista_prof_asoc.remove(prof)
+            for i in prof.listaAsig:
+                i.del_profesor(prof)
+        
     def del_investigador(self,investigador):
-        invest = self._buscainvest(investigador)
-        self._lista_inves.remove(invest)
-        if invest in self._lista_prof_tit:
-            self._lista_prof_tit.remove(invest) # se elimina también de la lista de investigadores.
+        try:
+            invest = self._buscainvest(investigador)
+            self._lista_inves.remove(invest)
+            if invest in self._lista_prof_tit:
+                self._lista_prof_tit.remove(invest) # se elimina también de la lista de investigadores.
+        except:
+            raise PersonaNotFound()
             
     def asignar_asig_est(self,estudiante,nom_asig):
         asig = self._buscaasig(nom_asig)
@@ -199,12 +219,26 @@ class Universidad:
         prof.add_asig(asig)
         asig.add_profesor(prof)  ## ver si el tipo de datos coincide.
         
-    
-    def mostrar_lista_asig_rol(self,rol): # puede ser o estudiante o profesor, daría igual porque el atributo se llama igual.
-        pass
+    def mostrar_lista_asig_est(self,estudiante): 
+        est = self._buscaestud(estudiante)
+        est.mostrar_asig()
+
+    def mostrar_lista_asig_prof(self,profesor): 
+        prof_asoc = self._buscaprofAsoc(profesor)
+        if prof_asoc == None:
+            prof_titular = self._buscaprofTitular(profesor)
+            if prof_titular == None:
+                raise PersonaNotFound()
+            else: # signfica que profesor es un profesor titular.
+                prof_titular.mostrar_asig()
+        else: # es un profesor asociado
+            prof_asoc.mostrar_asig()
+
     
     def mostrar_lista_asig_totales(self):
-        pass
+        print("La Universidad ",self.nombre," imparte las siguientes asignaturas: ")
+        for i in self._lista_asig:
+            print(i,"\n")
         
 prof_est = {'Historia' : {'profesor' : ['Jaime'],'estudiantes' : ['Juan','Noa','Manuel']}}
 print(prof_est['Historia']['estudiantes'])
