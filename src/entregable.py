@@ -262,13 +262,23 @@ class Universidad:
             i += 1
         return invest
     
+    def _add_persona_dep(self,pers,dep):
+        if dep in self._departamentos: 
+            self._departamentos[str(dep)].append(pers) 
+        else:
+            self._departamentos[str(dep)] = [pers]
+    
+    def _del_pers_dep(self,pers):
+        dep_ant = pers.miembro.get_dep()
+        self._departamentos[str(dep_ant)].remove(pers)
+    
 
     def add_estudiante(self,nombre,DNI,direccion,sexo):
         est = Estudiante(nombre,DNI,direccion,sexo)
         self._lista_est.append(est)
     
     # Si se incluye area de investigación querrá decir que es un ProfesorTitular, mientras que si no se incluye será un ProfesorAsociado.
-
+    
     def add_prof(self,nombre,DNI,direccion,sexo,departamento,area_inv=None):
         if area_inv != None: # querrá decir que es un profesor titular
             prof = ProfesorTitular(nombre,DNI,direccion,sexo,area_inv,departamento)
@@ -279,20 +289,14 @@ class Universidad:
             self._lista_prof_asoc.append(prof)
         
         # finalmente se añadirá al profesor en su respectivo departamento.
-        if departamento in self._departamentos: 
-            self._departamentos[str(departamento)].append(prof) 
-        else:
-            self._departamentos[str(departamento)] = [prof]
+        self._add_persona_dep(prof,departamento)
      
     def add_investigador(self,nombre,DNI,direccion,sexo,area,departamento):
         invest = Investigador(nombre,DNI,direccion,sexo,area,departamento)
         self._lista_inves.append(invest)
 
         # Igual que en los métodos de los profesores.
-        if departamento in self._departamentos: 
-            self._departamentos[str(departamento)].append(invest) 
-        else:
-            self._departamentos[str(departamento)] = [invest]
+        self._add_persona_dep(invest,departamento)
     
     def add_asig(self,nombre,creditos):
         for i in self._lista_asig:
@@ -306,8 +310,7 @@ class Universidad:
         self._lista_est.remove(est) # se elimina de la lista de estudiantes.
         for i in est.listaAsig: 
             i.del_estudiante(est) # de cada asignatura que tenga el estudiante se elimina a este mismo.
-        
-    
+
     def del_profesor(self,profesor):
         prof_asoc = self._buscaprofAsoc(profesor)
         if prof_asoc == None:
@@ -316,16 +319,14 @@ class Universidad:
                 raise NotFound('Error. Este profesor no se encuentra en la base de datos') # ese nombre no corresponde a ningún profesor.
             else: # signfica que profesor es un profesor titular.
                 prof = self._buscaprofTitular(profesor)
-                dep_ant = prof.miembro.get_dep()
-                self._departamentos[str(dep_ant)].remove(prof)
+                self._del_pers_dep(prof)
                 self._lista_prof_tit.remove(prof)
                 self._lista_inves.remove(prof) # al ser una composición también se elimina.
                 for i in prof.listaAsig:
                     i.del_profesor(prof)
         else: # es un profesor asociado
             prof = self._buscaprofAsoc(profesor)
-            dep_ant = prof.miembro.get_dep()
-            self._departamentos[str(dep_ant)].remove(prof)
+            self._del_pers_dep(prof)
             self._lista_prof_asoc.remove(prof)
             for i in prof.listaAsig:
                 i.del_profesor(prof)
@@ -334,8 +335,7 @@ class Universidad:
         try:
             invest = self._buscainvest(investigador)
             self._lista_inves.remove(invest)
-            dep_ant = invest.miembro.get_dep()
-            self._departamentos[str(dep_ant)].remove(invest)
+            self._del_pers_dep(invest)
             if invest in self._lista_prof_tit:
                 self._lista_prof_tit.remove(invest) # se elimina también de la lista de profesores titulares.
         except:
@@ -346,35 +346,23 @@ class Universidad:
         assert dep == Departamento.DIIC or dep == Departamento.DIS or dep == Departamento.DITEC , 'Nombre de departamento inválido.'
         p = self._buscaprofAsoc(nombre)
         if p != None:
-            dep_antiguo = p.miembro.get_dep()
-            self._departamentos[str(dep_antiguo)].remove(p)
+            self._del_pers_dep(p)
             p.miembro.cambiar_dep(dep)
-            if str(dep) in self._departamentos:
-                self._departamentos[str(dep)].append(p)
-            else:
-                self._departamentos[str(dep)] = [p]
+            self._add_persona_dep(p,str(dep))
         else:
             pt = self._buscaprofTitular(nombre)
             if pt != None:
-                dep_antiguo = pt.miembro.get_dep()
-                self._departamentos[str(dep_antiguo)].remove(pt)
+                self._del_pers_dep(pt)
                 pt.miembro.cambiar_dep(dep)
                 inv = self._buscainvest(nombre) 
                 inv.miembro.cambiar_dep(dep)
-                if str(dep) in self._departamentos:
-                    self._departamentos[str(dep)].append(pt)
-                else:
-                    self._departamentos[str(dep)] = [pt]
+                self._add_persona_dep(pt,str(dep))
             else:
                 i = self._buscainvest(nombre)
                 if self._buscainvest(nombre) != None:
-                    dep_antiguo = i.miembro.get_dep()
-                    self._departamentos[dep_antiguo].remove(i) 
+                    self._del_pers_dep(i)
                     i.miembro.cambiar_dep(dep)
-                    if str(dep) in self._departamentos:
-                        self._departamentos[str(dep)].append(i)
-                    else:
-                        self._departamentos[str(dep)] = [i]
+                    self._add_persona_dep(i,str(dep))
                 else:
                     raise NotFound('Error. Esta persona no se encuentra en la base de datos.')
             
