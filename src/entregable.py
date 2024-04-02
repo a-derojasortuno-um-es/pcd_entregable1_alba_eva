@@ -265,7 +265,7 @@ class Universidad:
     # Se incluyen estos métodos privados para añadir y eliminar personas de un departamento con el fin de simplificar el código.
     
     def _add_persona_dep(self,pers,dep):
-        if dep in self._departamentos: 
+        if str(dep) in self._departamentos: 
             self._departamentos[str(dep)].append(pers) 
         else:
             self._departamentos[str(dep)] = [pers]
@@ -355,7 +355,7 @@ class Universidad:
         if p != None:
             self._del_pers_dep(p)
             p.miembro.cambiar_dep(dep)
-            self._add_persona_dep(p,str(dep))
+            self._add_persona_dep(p,dep)
         else:
             pt = self._buscaprofTitular(nombre)
             if pt != None:
@@ -363,13 +363,13 @@ class Universidad:
                 pt.miembro.cambiar_dep(dep)
                 inv = self._buscainvest(nombre) 
                 inv.miembro.cambiar_dep(dep)
-                self._add_persona_dep(pt,str(dep))
+                self._add_persona_dep(pt,dep)
             else:
                 i = self._buscainvest(nombre)
                 if self._buscainvest(nombre) != None:
                     self._del_pers_dep(i)
                     i.miembro.cambiar_dep(dep)
-                    self._add_persona_dep(i,str(dep))
+                    self._add_persona_dep(i,dep)
                 else:
                     raise NotFound('Error. Esta persona no se encuentra en la base de datos.')
             
