@@ -151,7 +151,7 @@ class ProfesorAsociado(Persona):
             print(i)
 
     def __str__(self):
-        return self.devuelveDatos() + '\nDepartamento:'+str(self.miembro.get_dep())
+        return self.devuelveDatos() + '\nDepartamento: '+str(self.miembro.get_dep())
 
 
 # La clase Estudiante sigue el mismo patrón que ProfesorTitular y ProfesorAsociado.
@@ -167,7 +167,7 @@ class Estudiante(Persona):
         self.listaAsig.remove(asig)
 
     def mostrar_asig(self):
-        print("El estudiante",self.nombre,"tiene la siguientes asignaturas: ")
+        print("Estudiante:",self.nombre,"cursa las siguientes asignaturas: ")
         for i in self.listaAsig:
             print(i)
     
@@ -262,6 +262,8 @@ class Universidad:
             i += 1
         return invest
     
+    # Se incluyen estos métodos privados para añadir y eliminar personas de un departamento con el fin de simplificar el código.
+    
     def _add_persona_dep(self,pers,dep):
         if dep in self._departamentos: 
             self._departamentos[str(dep)].append(pers) 
@@ -311,25 +313,25 @@ class Universidad:
         for i in est.listaAsig: 
             i.del_estudiante(est) # de cada asignatura que tenga el estudiante se elimina a este mismo.
 
+    # Se ha unificado en un mismo método la eliminación de cualquier tipo de profesor con el fin de hacer más sencilla la consulta para el usuario.
+            
     def del_profesor(self,profesor):
         prof_asoc = self._buscaprofAsoc(profesor)
-        if prof_asoc == None:
+        if prof_asoc == None: # El profesor no será asociado y, por tanto, se hace la búsqueda de los titulares.
             prof_titular = self._buscaprofTitular(profesor)
-            if prof_titular == None:
-                raise NotFound('Error. Este profesor no se encuentra en la base de datos') # ese nombre no corresponde a ningún profesor.
+            if prof_titular == None: # Como el profesor no es ni asociado ni titular, entonces querrá decir que ese nombre no corresponde a ningún profesor.
+                raise NotFound('Error. Este profesor no se encuentra en la base de datos') 
             else: # signfica que profesor es un profesor titular.
-                prof = self._buscaprofTitular(profesor)
-                self._del_pers_dep(prof)
-                self._lista_prof_tit.remove(prof)
-                self._lista_inves.remove(prof) # al ser una composición también se elimina.
-                for i in prof.listaAsig:
-                    i.del_profesor(prof)
+                self._del_pers_dep(prof_titular)
+                self._lista_prof_tit.remove(prof_titular)
+                self._lista_inves.remove(prof_titular) # al ser una composición también se elimina.
+                for i in prof_titular.listaAsig: # se elimina de cada asignatura donde imparta clase al profesor titular.
+                    i.del_profesor(prof_titular)
         else: # es un profesor asociado
-            prof = self._buscaprofAsoc(profesor)
-            self._del_pers_dep(prof)
-            self._lista_prof_asoc.remove(prof)
-            for i in prof.listaAsig:
-                i.del_profesor(prof)
+            self._del_pers_dep(prof_asoc)
+            self._lista_prof_asoc.remove(prof_asoc)
+            for i in prof_asoc.listaAsig:
+                i.del_profesor(prof_asoc)
         
     def del_investigador(self,investigador):
         try:
@@ -341,6 +343,11 @@ class Universidad:
         except:
             raise NotFound('Error. Este investigador no se encuentra en la base de datos.')
         
+    # Solo existirá un método único para cambiar el departamento. La forma de proceder será viendo si el objeto _buscar... devuelve None o si, por el contrario,
+    # ha encontrado el objeto que se deseaba.
+    # Primero se va a comprobar que el departamento insertado sea el correcto y si no, saldrá un error.
+
+    # Como la variable dep será un objeto de la clase Departamento se debe meter en el diccionario de los departamentos propio de Universidad como un cadena de texto.
 
     def cambiar_dep(self,nombre, dep):
         assert dep == Departamento.DIIC or dep == Departamento.DIS or dep == Departamento.DITEC , 'Nombre de departamento inválido.'
@@ -432,12 +439,16 @@ class Universidad:
                 prof_titular.mostrar_asig()
         else: # es un profesor asociado
             prof_asoc.mostrar_asig()
-    
+
+# Como se ha almacenado el diccionario con los departamentos existentes y sus miembros, el método para mostrarlos será mucho más sencillo.
+            
+# Para que la impresión sea mucho más sencilla se eliminará el prefijo 'Departamento.' y nos quedaremos con el nombre en sí.
+
     def mostrar_dep(self,dep):
         try:
-            print(f"--MIEMBROS DEL DEPARTAMENTO {str(dep)} --","\n")
+            print(f"--MIEMBROS DEL DEPARTAMENTO {str(dep)[13:]} --","\n")
             for i in self._departamentos[str(dep)]:
-                print(i)
+                print(i,"\n")
         except:
             raise NotFound('No se encuentra este departamento.')
 
@@ -504,6 +515,10 @@ if __name__ == "__main__":
     uni.mostrar_investigadores()
 
     uni.mostrar_asignaturas()
+
+    uni.del_profesor('Juan Fernández')
+
+    uni.mostrar_profesores()
     
     #uni.add_estudiante('Mar Soler', '571867890L', 'Valladolid', 'F') # tendrá un error de DNI por tener una longitud de 10, en vez de 9.
 
@@ -532,7 +547,6 @@ if __name__ == "__main__":
     uni.mostrar_estudiantes()
     
     uni.mostrar_estudiantes_asign('Física')
-
 
 
 
