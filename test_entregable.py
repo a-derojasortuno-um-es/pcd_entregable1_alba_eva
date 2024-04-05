@@ -1,3 +1,4 @@
+from abc import ABCMeta, abstractmethod
 from enum import Enum
 
 # Excepción que corresponde a cuando se han introducen datos que aún no están almacenados.
@@ -8,7 +9,7 @@ class NotFound(Exception):
 class Repeated(Exception):  
     pass
 
-class Persona:
+class Persona(metaclass=ABCMeta):
     def __init__(self,nombre,DNI,direccion,sexo):
         assert len(DNI)==9, 'Formato de DNI incorrecto.'
         assert sexo == 'M' or sexo == 'F', 'Opción inválida. Opciones válidad para sexo: M / F'
@@ -17,9 +18,10 @@ class Persona:
         self._DNI = DNI
         self._direccion  = direccion
         self._sexo = sexo
-    # Método que será común a todas las clases heredadas y que devolverá los datos personales.
-    def devuelveDatos(self): 
-        return "Nombre: " + self.nombre + "\nDNI: " +str(self._DNI) + "\nDirección: " + str(self._direccion) + "\nSexo: " + self._sexo
+
+    @abstractmethod
+    def __str__(self): 
+        pass
 
 
 class Miembro_departamento:
@@ -94,9 +96,12 @@ class Investigador(Persona):
         self._area = area
         # como se utiliza la composición, nada más crear el objeto Investigador, se crea su objeto Miembro_departamento.
         self.miembro  = Miembro_departamento(departamento) 
+    
+    def get_area(self):
+        return self._area
 
     def __str__(self):
-        return self.devuelveDatos() +'\nArea de investigación: '+self._area+'\nDepartamento:'+str(self.miembro.get_dep())+'\n'
+        return "Nombre: " + self.nombre + "\nDNI: " +str(self._DNI) + "\nDirección: " + str(self._direccion) + "\nSexo: " + self._sexo +'\nArea de investigación: '+self._area+'\nDepartamento:'+str(self.miembro.get_dep())+'\n'
 
 # ProfesorTitular hereda de Persona.
 class ProfesorTitular(Persona):
@@ -128,7 +133,7 @@ class ProfesorTitular(Persona):
     # Para imprimir el objeto ProfesorTitular no se incluye el área de investigación porque irá incluido en el objeto Investigador.
 
     def __str__(self):
-        return self.devuelveDatos() + '\nDepartamento:'+str(self.miembro.get_dep())+'\n'
+        return "Nombre: " + self.nombre + "\nDNI: " +str(self._DNI) + "\nDirección: " + str(self._direccion) + "\nSexo: " + self._sexo + '\nDepartamento: '+str(self.miembro.get_dep())
        
             
 class ProfesorAsociado(Persona):
@@ -151,7 +156,7 @@ class ProfesorAsociado(Persona):
             print(i)
 
     def __str__(self):
-        return self.devuelveDatos() + '\nDepartamento: '+str(self.miembro.get_dep())
+        return "Nombre: " + self.nombre + "\nDNI: " +str(self._DNI) + "\nDirección: " + str(self._direccion) + "\nSexo: " + self._sexo + '\nDepartamento: '+str(self.miembro.get_dep())
 
 
 # La clase Estudiante sigue el mismo patrón que ProfesorTitular y ProfesorAsociado.
@@ -172,7 +177,7 @@ class Estudiante(Persona):
             print(i)
     
     def __str__(self):
-        return self.devuelveDatos()
+        return "Nombre: " + self.nombre + "\nDNI: " +str(self._DNI) + "\nDirección: " + str(self._direccion) + "\nSexo: " + self._sexo
 
 
 # En la clase principal de Universidad se incluirán todos los métodos accesibles para el usuario.
@@ -285,7 +290,7 @@ class Universidad:
         if area_inv != None: # querrá decir que es un profesor titular
             prof = ProfesorTitular(nombre,DNI,direccion,sexo,area_inv,departamento)
             self._lista_prof_tit.append(prof)
-            self._lista_inves.append(prof) # el profesor titular deberá estar, a su vez, en las dos listas. 
+            self._lista_inves.append(prof) 
         else: # es un profesor asociado.
             prof = ProfesorAsociado(nombre,DNI,direccion,sexo,departamento)
             self._lista_prof_asoc.append(prof)
@@ -467,7 +472,7 @@ class Universidad:
             print(asoc,"\n")
         print("--PROFESORES TITULARES--","\n")
         for tit in self._lista_prof_tit:
-            print(tit)
+            print(tit,"\n")
     
     def mostrar_estudiantes(self):
         print("--LISTADO ESTUDIANTES--","\n")
@@ -477,7 +482,11 @@ class Universidad:
     def mostrar_investigadores(self):
         print("--LISTADO INVESTIGADORES--","\n")
         for inv in self._lista_inves:
-            print(inv,"\n")
+            print(inv)
+            if inv in self._lista_prof_tit:
+                print("Área de investigación: " + str(inv.rol_inv.get_area()))
+            print("\n")
+
     
     def __str__(self):
         return "Universidad " + self.nombre + " con código postal " + str(self._codpostal) + " situada en la ciudad de " + self._ciudad
@@ -504,6 +513,8 @@ uni.asignar_asig_prof('Juan Fernández','Física')
 uni.asignar_asig_prof('Juan Fernández','Matemáticas')
 
 uni.mostrar_asign_profesor('Juan Fernández')
+
+uni.add_investigador('Paula García','56565656L','Bilbao','F','Área de Tecnología',Departamento.DIS)
     
 uni.add_prof('Pepe Ruiz','90091234C','León','M',Departamento.DITEC,'Área de Computadores')
 uni.asignar_asig_prof('Pepe Ruiz','Matemáticas')
@@ -511,9 +522,13 @@ uni.asignar_asig_prof('Pepe Ruiz','Historia')
     
 uni.mostrar_profesores()
 
+uni.mostrar_investigadores()
+
 uni.cambiar_dep('Pepe Ruiz',Departamento.DIIC)
 
 uni.mostrar_dep(Departamento.DIIC)
+
+uni.del_investigador('Paula García')
 
 uni.mostrar_investigadores()
 
